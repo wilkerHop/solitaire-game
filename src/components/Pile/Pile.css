@@ -2,23 +2,22 @@
 
 .pile {
   --card-offset: 25px;
+  --face-down-offset: 12px;
   position: relative;
   min-width: 80px;
   min-height: 112px;
 }
 
-/* Stacked layout (tableau columns) */
+/* Stacked layout (tableau columns) - cards overlap vertically */
 .pile-stacked {
-  display: flex;
-  flex-direction: column;
+  position: relative;
 }
 
 .pile-stacked .pile-card-wrapper {
-  margin-top: calc(var(--card-index) * var(--card-offset) - var(--card-offset));
-}
-
-.pile-stacked .pile-card-wrapper:first-child {
-  margin-top: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateY(calc(var(--card-index) * var(--card-offset)));
 }
 
 /* Spread layout (waste pile - show last 3) */
@@ -80,6 +79,7 @@
 @media (max-width: 768px) {
   .pile {
     --card-offset: 20px;
+    --face-down-offset: 10px;
     min-width: 60px;
     min-height: 84px;
   }
@@ -97,6 +97,7 @@
 @media (max-width: 480px) {
   .pile {
     --card-offset: 18px;
+    --face-down-offset: 8px;
     min-width: 48px;
     min-height: 67px;
   }

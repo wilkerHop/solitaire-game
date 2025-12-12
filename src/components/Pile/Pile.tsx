@@ -21,66 +21,42 @@ interface PileProps {
 }
 
 export function Pile({
-  cards,
-  layout = 'stacked',
-  emptyPlaceholder,
-  onCardClick,
-  selectedCardIndex,
-  label,
+  cards, layout = 'stacked', emptyPlaceholder, onCardClick, selectedCardIndex, label,
 }: PileProps): ReactElement {
   const isEmpty = cards.length === 0
+  const pileHeight = isEmpty ? 112 : 112 + (cards.length - 1) * 25
   
   return (
-    <div 
-      className={`pile pile-${layout} ${isEmpty ? 'pile-empty' : ''}`}
-      aria-label={label}
-    >
+    <div className={`pile pile-${layout} ${isEmpty ? 'pile-empty' : ''}`}
+      aria-label={label} style={{ minHeight: layout === 'stacked' ? pileHeight : undefined }}>
       {isEmpty && emptyPlaceholder && (
         <div className={`pile-placeholder placeholder-${emptyPlaceholder}`}>
-          {emptyPlaceholder === 'foundation' && (
-            <span className="placeholder-icon">♠</span>
-          )}
-          {emptyPlaceholder === 'tableau' && (
-            <span className="placeholder-icon">K</span>
-          )}
-          {emptyPlaceholder === 'stock' && (
-            <span className="placeholder-icon">⟳</span>
-          )}
+          {emptyPlaceholder === 'foundation' && <span className="placeholder-icon">♠</span>}
+          {emptyPlaceholder === 'tableau' && <span className="placeholder-icon">K</span>}
+          {emptyPlaceholder === 'stock' && <span className="placeholder-icon">⟳</span>}
         </div>
       )}
       
       {layout === 'single' ? (
-        // Only show top card
         cards.length > 0 && (
-          <Card
-            card={cards[cards.length - 1]}
-            onClick={(): void => {
-              onCardClick?.(cards[cards.length - 1], cards.length - 1)
-            }}
-            isSelected={selectedCardIndex === cards.length - 1}
-          />
+          <Card card={cards[cards.length - 1]}
+            onClick={(): void => { onCardClick?.(cards[cards.length - 1], cards.length - 1) }}
+            isSelected={selectedCardIndex === cards.length - 1} />
         )
       ) : (
-        // Show all cards with offset
-        cards.map((card, index) => (
-          <div
-            key={`${card.suit}-${String(card.rank)}-${String(index)}`}
-            className="pile-card-wrapper"
-            style={{
-              '--card-index': index,
-              zIndex: index,
-            } as React.CSSProperties}
-          >
-            <Card
-              card={card}
-              onClick={(): void => {
-                onCardClick?.(card, index)
-              }}
-              isSelected={selectedCardIndex !== undefined && index >= selectedCardIndex}
-              stackOffset={index}
-            />
-          </div>
-        ))
+        cards.map((card, index) => {
+          const isClickable = card.faceUp
+          return (
+            <div key={`${card.suit}-${String(card.rank)}-${String(index)}`}
+              className="pile-card-wrapper"
+              style={{ '--card-index': index, zIndex: index } as React.CSSProperties}>
+              <Card card={card}
+                onClick={isClickable ? (): void => { onCardClick?.(card, index) } : undefined}
+                isSelected={selectedCardIndex !== undefined && index >= selectedCardIndex && card.faceUp}
+                stackOffset={index} />
+            </div>
+          )
+        })
       )}
     </div>
   )

@@ -11,10 +11,10 @@ import './Card.css'
 
 interface CardProps {
   readonly card: CardType
-  readonly onClick?: () => void
-  readonly isSelected?: boolean
-  readonly isDragging?: boolean
-  readonly stackOffset?: number
+  readonly onClick?: (() => void) | undefined
+  readonly isSelected?: boolean | undefined
+  readonly isDragging?: boolean | undefined
+  readonly stackOffset?: number | undefined
 }
 
 export function Card({
