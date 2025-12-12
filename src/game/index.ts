@@ -24,3 +24,9 @@ export {
     getFoundationPile, getTopCard, validateMove
 } from './game-state'
 
+// Scoring
+export {
+    calculateFinalScore, calculateMoveScore, calculateProgress, calculateTimeBonus, formatScore, getInitialScore,
+    isUndoAllowed, type ScoringMode
+} from './scoring'
+
