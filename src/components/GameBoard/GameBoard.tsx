@@ -4,8 +4,7 @@
 
 import type { ReactElement } from 'react'
 import { useCallback, useState } from 'react'
-import type { CardLocation, Move } from '../../game'
-import { findBestMove } from '../../game'
+import type { CardLocation } from '../../game'
 import {
   useCanRedo, useCanUndo, useFoundations, useGameState,
   useGameStore, useIsWon, useStats, useStockAndWaste, useTableau
@@ -15,6 +14,7 @@ import './GameBoard.css'
 import { TableauArea } from './TableauArea'
 import { TopRow } from './TopRow'
 import { useDragDrop } from './useDragDrop'
+import { useGameHandlers } from './useGameHandlers'
 
 export function GameBoard(): ReactElement {
   const gameState = useGameState()
@@ -28,46 +28,16 @@ export function GameBoard(): ReactElement {
   const { moveCard, drawCard, undo, redo, newGame, autoComplete } = useGameStore()
   const [selectedLocation, setSelectedLocation] = useState<CardLocation | null>(null)
 
-  const handleDoubleClick = useCallback((location: CardLocation): void => {
-    const bestMove = findBestMove(gameState, location)
-    if (bestMove) {
-      moveCard(bestMove)
-      setSelectedLocation(null)
-    }
-  }, [gameState, moveCard])
-
-  const handleCardClick = useCallback((location: CardLocation): void => {
-    if (selectedLocation === null) {
-      setSelectedLocation(location)
-    } else {
-      const move: Move = {
-        from: selectedLocation,
-        to: location,
-        cardCount: selectedLocation.type === 'tableau' 
-          ? tableau.columns[selectedLocation.columnIndex].length - selectedLocation.cardIndex
-          : 1,
-      }
-      moveCard(move)
-      setSelectedLocation(null)
-    }
-  }, [selectedLocation, moveCard, tableau.columns])
-
-  const handleStockClick = useCallback((): void => {
-    setSelectedLocation(null)
-    drawCard(1)
-  }, [drawCard])
-
-  const handleWasteClick = useCallback((): void => {
-    if (stockAndWaste.waste.length > 0) handleCardClick({ type: 'waste' })
-  }, [handleCardClick, stockAndWaste.waste.length])
-
-  const handleFoundationClick = useCallback((pileIndex: number): void => {
-    handleCardClick({ type: 'foundation', pileIndex })
-  }, [handleCardClick])
-
-  const handleEmptyTableauClick = useCallback((columnIndex: number): void => {
-    handleCardClick({ type: 'tableau', columnIndex, cardIndex: 0 })
-  }, [handleCardClick])
+  const {
+      handleDoubleClick,
+      handleCardClick,
+      handleStockClick,
+      handleWasteClick,
+      handleFoundationClick,
+      handleEmptyTableauClick
+  } = useGameHandlers(
+      gameState, moveCard, drawCard, selectedLocation, setSelectedLocation, stockAndWaste, tableau
+  )
 
   const { handleDragStart, handleDragOver, handleDrop } = useDragDrop(moveCard, tableau.columns, setSelectedLocation)
 
