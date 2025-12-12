@@ -1,0 +1,112 @@
+/* Pile Component Styles */
+
+.pile {
+  --card-offset: 25px;
+  position: relative;
+  min-width: 80px;
+  min-height: 112px;
+}
+
+/* Stacked layout (tableau columns) */
+.pile-stacked {
+  display: flex;
+  flex-direction: column;
+}
+
+.pile-stacked .pile-card-wrapper {
+  margin-top: calc(var(--card-index) * var(--card-offset) - var(--card-offset));
+}
+
+.pile-stacked .pile-card-wrapper:first-child {
+  margin-top: 0;
+}
+
+/* Spread layout (waste pile - show last 3) */
+.pile-spread {
+  display: flex;
+  flex-direction: row;
+}
+
+.pile-spread .pile-card-wrapper {
+  margin-left: calc(var(--card-index) * 20px - 20px);
+}
+
+.pile-spread .pile-card-wrapper:first-child {
+  margin-left: 0;
+}
+
+/* Single card layout (foundation, stock) */
+.pile-single {
+  position: relative;
+}
+
+/* Empty pile placeholder */
+.pile-placeholder {
+  width: 80px;
+  height: 112px;
+  border-radius: 8px;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.pile-placeholder:hover {
+  background: rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.placeholder-icon {
+  font-size: 28px;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Georgia', serif;
+}
+
+.placeholder-foundation .placeholder-icon {
+  color: rgba(255, 215, 0, 0.4);
+}
+
+.placeholder-tableau .placeholder-icon {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.placeholder-stock .placeholder-icon {
+  font-size: 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .pile {
+    --card-offset: 20px;
+    min-width: 60px;
+    min-height: 84px;
+  }
+  
+  .pile-placeholder {
+    width: 60px;
+    height: 84px;
+  }
+  
+  .placeholder-icon {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pile {
+    --card-offset: 18px;
+    min-width: 48px;
+    min-height: 67px;
+  }
+  
+  .pile-placeholder {
+    width: 48px;
+    height: 67px;
+  }
+  
+  .placeholder-icon {
+    font-size: 18px;
+  }
+}
