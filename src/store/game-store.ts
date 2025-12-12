@@ -4,14 +4,9 @@
 
 import { create } from 'zustand'
 import type { GameState, Move } from '../game'
-import { applyMove, canAutoComplete, checkWinCondition, drawFromStock } from '../game'
-import {
-  createInitialHistory,
-  type HistoryState,
-  pushToHistory,
-  redoHistory,
-  undoHistory,
-} from './history'
+import { applyMove, canAutoComplete, drawFromStock } from '../game'
+import { performAutoComplete } from './auto-complete'
+import { createInitialHistory, type HistoryState, pushToHistory, redoHistory, undoHistory } from './history'
 
 export type GameAction =
   | { type: 'NEW_GAME'; seed?: number }
@@ -80,27 +75,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const { history } = get()
     const currentState = history.present
     if (!canAutoComplete(currentState)) return
-    
-    const tryAutoMove = (state: GameState): GameState => {
-      if (checkWinCondition(state)) return state
-      const findMove = (colIndex: number): GameState | null => {
-        if (colIndex >= 7) return null
-        const column = state.tableau.columns[colIndex]
-        if (column.length === 0) return findMove(colIndex + 1)
-        const topCard = column[column.length - 1]
-        const move: Move = {
-          from: { type: 'tableau', columnIndex: colIndex, cardIndex: column.length - 1 },
-          to: { type: 'foundation', suit: topCard.suit },
-          cardCount: 1,
-        }
-        const result = applyMove(state, move)
-        return result.success ? result.value : findMove(colIndex + 1)
-      }
-      const newState = findMove(0)
-      return newState ? tryAutoMove(newState) : state
-    }
-    
-    const finalState = tryAutoMove(currentState)
+    const finalState = performAutoComplete(currentState)
     if (finalState !== currentState) set({ history: pushToHistory(history, finalState) })
   },
 }))
+

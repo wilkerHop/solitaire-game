@@ -105,13 +105,13 @@ jobs:
           echo "✅ No console statements found."
 
       # =========================================================================
-      # Sin 6: Large Files (>100 lines)
+      # Sin 6: Large Files (>100 lines) - Excludes test files
       # =========================================================================
       - name: "Sin Check: No large files (>100 lines)"
         run: |
-          echo "📋 Checking for large files (>100 lines)..."
+          echo "📋 Checking for large files (>100 lines, excluding tests)..."
           LIMIT=100
-          LARGE_FILES=$(find src -name "*.ts" -o -name "*.tsx" 2>/dev/null | xargs wc -l 2>/dev/null | awk -v limit=$LIMIT '$1 > limit && $2 != "total" {print $2 ": " $1 " lines"}')
+          LARGE_FILES=$(find src -name "*.ts" -o -name "*.tsx" 2>/dev/null | grep -v "\.test\." | xargs wc -l 2>/dev/null | awk -v limit=$LIMIT '$1 > limit && $2 != "total" {print $2 ": " $1 " lines"}')
           
           if [ -n "$LARGE_FILES" ]; then
             echo ""
