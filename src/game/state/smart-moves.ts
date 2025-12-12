@@ -11,11 +11,9 @@ export function findBestMove(state: GameState, from: CardLocation): Move | null 
   if (!card) return null
 
   // Determine card count for the move
-  let cardCount = 1
-  if (from.type === 'tableau') {
-    const column = state.tableau.columns[from.columnIndex]
-    cardCount = column.length - from.cardIndex
-  }
+  const cardCount = from.type === 'tableau'
+    ? state.tableau.columns[from.columnIndex].length - from.cardIndex
+    : 1
 
   // 1. Try Foundations (only if moving single card)
   if (cardCount === 1) {

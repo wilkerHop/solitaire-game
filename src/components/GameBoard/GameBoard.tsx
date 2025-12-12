@@ -86,11 +86,9 @@ export function GameBoard(): ReactElement {
       
       const sourceLocation = JSON.parse(sourceData) as CardLocation
       
-      let cardCount = 1
-      if (sourceLocation.type === 'tableau') {
-        const column = tableau.columns[sourceLocation.columnIndex]
-        cardCount = column.length - sourceLocation.cardIndex
-      }
+      const cardCount = sourceLocation.type === 'tableau'
+        ? tableau.columns[sourceLocation.columnIndex].length - sourceLocation.cardIndex
+        : 1
       
       const move: Move = {
         from: sourceLocation,

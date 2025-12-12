@@ -12,14 +12,18 @@ export function performAutoComplete(currentState: GameState): GameState {
       if (colIndex >= 7) return null
       const column = state.tableau.columns[colIndex]
       if (column.length === 0) return findMove(colIndex + 1)
-      const topCard = column[column.length - 1]
-      const move: Move = {
-        from: { type: 'tableau', columnIndex: colIndex, cardIndex: column.length - 1 },
-        to: { type: 'foundation', suit: topCard.suit },
-        cardCount: 1,
+
+      // Try all foundation indices since they are no longer suit-specific
+      for (let i = 0; i < 4; i++) {
+        const move: Move = {
+          from: { type: 'tableau', columnIndex: colIndex, cardIndex: column.length - 1 },
+          to: { type: 'foundation', pileIndex: i },
+          cardCount: 1,
+        }
+        const result = applyMove(state, move)
+        if (result.success) return result.value
       }
-      const result = applyMove(state, move)
-      return result.success ? result.value : findMove(colIndex + 1)
+      return findMove(colIndex + 1)
     }
     const newState = findMove(0)
     return newState ? tryAutoMove(newState) : state
