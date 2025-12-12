@@ -40,10 +40,6 @@ export function formatScore(score: number, mode: ScoringMode = 'standard'): stri
 
 export function calculateProgress(state: GameState): number {
   const totalCards = 52
-  const cardsInFoundation = 
-    state.foundations.hearts.length +
-    state.foundations.diamonds.length +
-    state.foundations.clubs.length +
-    state.foundations.spades.length
+  const cardsInFoundation = state.foundations.piles.reduce((acc, pile) => acc + pile.length, 0)
   return Math.round((cardsInFoundation / totalCards) * 100)
 }

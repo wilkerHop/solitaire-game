@@ -20,7 +20,7 @@ export {
 
 // Game State
 export {
-    applyMove, canAutoComplete, checkWinCondition, dealGame, drawFromStock, getCardAtLocation,
+    applyMove, canAutoComplete, checkWinCondition, dealGame, drawFromStock, findBestMove, getCardAtLocation,
     getFoundationPile, getTopCard, validateMove
 } from './game-state'
 

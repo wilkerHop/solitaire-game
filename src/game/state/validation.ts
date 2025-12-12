@@ -2,7 +2,7 @@
  * Move validation functions - Uses Strategy Pattern instead of switch
  */
 
-import { canStackOnFoundation, canStackOnTableau, isKing } from '../card-utils'
+import { canStackOnTableau, isKing } from '../card-utils'
 import type { Card, GameState, LocationType, Move, Result } from '../types'
 import { failure, success } from '../types'
 import { getCardsForMove, getTopCard } from './accessors'
@@ -31,10 +31,16 @@ const moveValidationHandlers: Record<LocationType, MoveValidationHandler> = {
     if (move.to.type !== 'foundation') return failure('Invalid destination')
     if (move.cardCount > 1) return failure('Can only move single cards to foundation')
     
-    const foundationPile = state.foundations[move.to.suit]
+    const foundationPile = state.foundations.piles[move.to.pileIndex]
     const topCard = getTopCard(foundationPile)
     
-    return canStackOnFoundation(cardToMove, topCard, move.to.suit)
+    if (!topCard) {
+      return cardToMove.rank === 1 
+        ? success(true) 
+        : failure('Only Aces can be placed on empty foundation piles')
+    }
+    
+    return (cardToMove.suit === topCard.suit && cardToMove.rank === topCard.rank + 1)
       ? success(true)
       : failure('Card must be same suit and next rank up')
   },

@@ -2,17 +2,14 @@
  * Game state types for Solitaire
  */
 
-import type { Pile, Suit } from './card'
+import type { Pile } from './card'
 
 export interface Tableau {
   readonly columns: readonly Pile[]
 }
 
 export interface Foundations {
-  readonly hearts: Pile
-  readonly diamonds: Pile
-  readonly clubs: Pile
-  readonly spades: Pile
+  readonly piles: readonly Pile[]
 }
 
 export interface StockAndWaste {
@@ -39,6 +36,6 @@ export type LocationType = 'tableau' | 'foundation' | 'stock' | 'waste'
 
 export type CardLocation =
   | { readonly type: 'tableau'; readonly columnIndex: number; readonly cardIndex: number }
-  | { readonly type: 'foundation'; readonly suit: Suit }
+  | { readonly type: 'foundation'; readonly pileIndex: number }
   | { readonly type: 'stock' }
   | { readonly type: 'waste' }

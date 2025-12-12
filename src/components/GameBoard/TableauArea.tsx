@@ -11,16 +11,24 @@ interface TableauAreaProps {
   readonly selectedLocation: CardLocation | null
   readonly onCardClick: (location: CardLocation) => void
   readonly onEmptyColumnClick: (columnIndex: number) => void
+  readonly onColumnDragStart?: (columnIndex: number, cardIndex: number, e: React.DragEvent) => void
+  readonly onColumnDrop?: (columnIndex: number, e: React.DragEvent) => void
+  readonly onDragOver?: (e: React.DragEvent) => void
+  readonly onCardDoubleClick?: (location: CardLocation) => void
 }
 
 export function TableauArea({
-  tableau, selectedLocation, onCardClick, onEmptyColumnClick
+  tableau, selectedLocation, onCardClick, onEmptyColumnClick,
+  onColumnDragStart, onColumnDrop, onDragOver, onCardDoubleClick,
 }: TableauAreaProps): ReactElement {
   return (
     <div className="tableau-area">
       {tableau.columns.map((column, colIndex) => (
         <div key={colIndex} className="tableau-column"
-          onClick={column.length === 0 ? (): void => { onEmptyColumnClick(colIndex) } : undefined}>
+          onClick={column.length === 0 ? (): void => { onEmptyColumnClick(colIndex) } : undefined}
+          onDragOver={onDragOver}
+          onDrop={onColumnDrop ? (e): void => { onColumnDrop(colIndex, e) } : undefined}
+          >
           <Pile
             cards={column}
             layout="stacked"
@@ -34,6 +42,12 @@ export function TableauArea({
                 : undefined
             }
             label={`Tableau column ${String(colIndex + 1)}`}
+            onDragStart={onColumnDragStart ? (_, cardIndex, e): void => {
+              onColumnDragStart(colIndex, cardIndex, e)
+            } : undefined}
+            onCardDoubleClick={(_, cardIndex): void => {
+              onCardDoubleClick?.({ type: 'tableau', columnIndex: colIndex, cardIndex })
+            }}
           />
         </div>
       ))}

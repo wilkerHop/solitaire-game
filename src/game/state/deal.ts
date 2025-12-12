@@ -7,10 +7,12 @@ import type { Card, Foundations, GameState, GameStats, StockAndWaste, Tableau } 
 
 function createEmptyFoundations(): Foundations {
   return Object.freeze({
-    hearts: Object.freeze([]),
-    diamonds: Object.freeze([]),
-    clubs: Object.freeze([]),
-    spades: Object.freeze([]),
+    piles: Object.freeze([
+      Object.freeze([]),
+      Object.freeze([]),
+      Object.freeze([]),
+      Object.freeze([]),
+    ]),
   })
 }
 

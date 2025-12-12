@@ -12,17 +12,21 @@ import './Card.css'
 interface CardProps {
   readonly card: CardType
   readonly onClick?: (() => void) | undefined
+  readonly onDoubleClick?: (() => void) | undefined
   readonly isSelected?: boolean | undefined
   readonly isDragging?: boolean | undefined
   readonly stackOffset?: number | undefined
+  readonly onDragStart?: ((e: React.DragEvent) => void) | undefined
 }
 
 export function Card({
   card,
   onClick,
+  onDoubleClick,
   isSelected = false,
   isDragging = false,
   stackOffset = 0,
+  onDragStart,
 }: CardProps): ReactElement {
   const color = getCardColor(card)
   const rankDisplay = getRankDisplayName(card.rank)
@@ -53,6 +57,9 @@ export function Card({
       className={`card card-face ${color} ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`}
       style={{ '--stack-offset': stackOffset } as React.CSSProperties}
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
+      draggable={!!onDragStart}
+      onDragStart={onDragStart}
       role="button"
       tabIndex={0}
       onKeyDown={(e): void => {

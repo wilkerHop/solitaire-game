@@ -54,10 +54,11 @@ const removeFromSourceHandlers: Record<LocationType, RemoveFromSourceHandler> = 
   },
   foundation: (state, move) => {
     if (move.from.type !== 'foundation') return state
-    const foundations = { ...state.foundations }
-    const pile = foundations[move.from.suit].slice(0, -1)
-    foundations[move.from.suit] = Object.freeze(pile)
-    return Object.freeze({ ...state, foundations: Object.freeze(foundations) })
+    const piles = [...state.foundations.piles]
+    // Create new pile array and remove last card
+    const pile = piles[move.from.pileIndex].slice(0, -1)
+    piles[move.from.pileIndex] = Object.freeze(pile)
+    return Object.freeze({ ...state, foundations: Object.freeze({ piles: Object.freeze(piles) }) })
   },
   stock: (state) => state,
 }
@@ -82,10 +83,10 @@ const addToDestinationHandlers: Record<LocationType, AddToDestinationHandler> = 
   },
   foundation: (state, destination, cards) => {
     if (destination.type !== 'foundation') return state
-    const foundations = { ...state.foundations }
-    const pile = [...foundations[destination.suit], ...cards]
-    foundations[destination.suit] = Object.freeze(pile)
-    return Object.freeze({ ...state, foundations: Object.freeze(foundations) })
+    const piles = [...state.foundations.piles]
+    const pile = [...piles[destination.pileIndex], ...cards]
+    piles[destination.pileIndex] = Object.freeze(pile)
+    return Object.freeze({ ...state, foundations: Object.freeze({ piles: Object.freeze(piles) }) })
   },
   stock: (state) => state,
   waste: (state) => state,

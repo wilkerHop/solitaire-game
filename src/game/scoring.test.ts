@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
-  calculateFinalScore,
-  calculateMoveScore,
-  calculateProgress,
-  calculateTimeBonus,
-  createCard,
-  dealGame,
-  formatScore,
-  getInitialScore,
-  isUndoAllowed,
-  type GameState,
-  type Move,
+    calculateFinalScore,
+    calculateMoveScore,
+    calculateProgress,
+    calculateTimeBonus,
+    createCard,
+    dealGame,
+    formatScore,
+    getInitialScore,
+    isUndoAllowed,
+    type GameState,
+    type Move,
 } from '../game'
 
 function createWinningStateForProgress(): GameState {
@@ -20,13 +20,16 @@ function createWinningStateForProgress(): GameState {
       createCard(suit, (i + 1) as 1|2|3|4|5|6|7|8|9|10|11|12|13, true)
     )
   
+
   return {
     tableau: { columns: [[], [], [], [], [], [], []] },
     foundations: {
-      hearts: createPile('hearts'),
-      diamonds: createPile('diamonds'),
-      clubs: createPile('clubs'),
-      spades: createPile('spades'),
+      piles: [
+        createPile('hearts'),
+        createPile('diamonds'),
+        createPile('clubs'),
+        createPile('spades'),
+      ],
     },
     stockAndWaste: { stock: [], waste: [] },
     stats: { moves: 0, score: 0, startTime: 0, elapsedSeconds: 0 },
@@ -50,7 +53,7 @@ describe('Scoring System', () => {
     it('should give 10 points for waste to foundation move', () => {
       const move: Move = {
         from: { type: 'waste' },
-        to: { type: 'foundation', suit: 'hearts' },
+        to: { type: 'foundation', pileIndex: 0 },
         cardCount: 1,
       }
       const result = calculateMoveScore(move, false, 'standard')
@@ -61,7 +64,7 @@ describe('Scoring System', () => {
     it('should give 10 points for tableau to foundation move', () => {
       const move: Move = {
         from: { type: 'tableau', columnIndex: 0, cardIndex: 0 },
-        to: { type: 'foundation', suit: 'spades' },
+        to: { type: 'foundation', pileIndex: 0 }, // Spades pile
         cardCount: 1,
       }
       const result = calculateMoveScore(move, false, 'standard')
@@ -71,7 +74,7 @@ describe('Scoring System', () => {
 
     it('should penalize -15 for foundation to tableau move', () => {
       const move: Move = {
-        from: { type: 'foundation', suit: 'hearts' },
+        from: { type: 'foundation', pileIndex: 0 },
         to: { type: 'tableau', columnIndex: 0, cardIndex: 0 },
         cardCount: 1,
       }
@@ -95,7 +98,7 @@ describe('Scoring System', () => {
     it('should give $5 for foundation move', () => {
       const move: Move = {
         from: { type: 'tableau', columnIndex: 0, cardIndex: 0 },
-        to: { type: 'foundation', suit: 'hearts' },
+        to: { type: 'foundation', pileIndex: 0 },
         cardCount: 1,
       }
       expect(calculateMoveScore(move, false, 'vegas').points).toBe(5)

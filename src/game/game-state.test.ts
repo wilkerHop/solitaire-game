@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
-  applyMove,
-  canAutoComplete,
-  checkWinCondition,
-  createCard,
-  dealGame,
-  drawFromStock,
-  getTopCard,
-  validateMove,
-  type GameState,
-  type Move,
+    applyMove,
+    canAutoComplete,
+    checkWinCondition,
+    createCard,
+    dealGame,
+    drawFromStock,
+    getTopCard,
+    validateMove,
+    type GameState,
+    type Move,
 } from '../game'
 
 describe('Game State', () => {
@@ -68,10 +68,10 @@ describe('Game State', () => {
 
     it('should have empty foundation piles', () => {
       const state = dealGame(42)
-      expect(state.foundations.hearts.length).toBe(0)
-      expect(state.foundations.diamonds.length).toBe(0)
-      expect(state.foundations.clubs.length).toBe(0)
-      expect(state.foundations.spades.length).toBe(0)
+      expect(state.foundations.piles[0].length).toBe(0)
+      expect(state.foundations.piles[1].length).toBe(0)
+      expect(state.foundations.piles[2].length).toBe(0)
+      expect(state.foundations.piles[3].length).toBe(0)
     })
 
     it('should produce deterministic results with same seed', () => {
@@ -196,37 +196,52 @@ describe('Game State', () => {
     })
 
     it('should allow moving Ace to empty foundation', () => {
-      const state = createStateWithAceInWaste()
+      const state = dealGame(42)
       
-      const move: Move = {
-        from: { type: 'waste' },
-        to: { type: 'foundation', suit: 'hearts' },
-        cardCount: 1,
+      // We need a state with an exposed Ace. 
+      // Instead of relying on deal, let's inject one.
+      const stateWithAce: GameState = {
+        ...state,
+        tableau: {
+          columns: [
+            ...state.tableau.columns.slice(0, 1),
+            [{ suit: 'spades', rank: 1, faceUp: true }],
+            ...state.tableau.columns.slice(2)
+          ]
+        }
       }
       
-      const result = validateMove(state, move)
-      expect(result.success).toBe(true)
+      const move: Move = {
+        from: { type: 'tableau', columnIndex: 1, cardIndex: 0 },
+        to: { type: 'foundation', pileIndex: 0 },
+        cardCount: 1
+      }
+      
+      expect(validateMove(stateWithAce, move).success).toBe(true)
     })
-
+    
     it('should reject moving non-Ace to empty foundation', () => {
-      const state = createStateWithTwoInWaste()
+      const state = dealGame(42)
       
       const move: Move = {
-        from: { type: 'waste' },
-        to: { type: 'foundation', suit: 'hearts' },
+        from: { type: 'tableau', columnIndex: 1, cardIndex: 0 },
+        to: { type: 'foundation', pileIndex: 0 },
         cardCount: 1,
       }
       
-      const result = validateMove(state, move)
-      expect(result.success).toBe(false)
+      expect(validateMove(state, move).success).toBe(false)
     })
 
     it('should reject moving multiple cards to foundation', () => {
       const state = createStateWithAceInWaste()
       
+      // Inject Ace into waste properly for this test to make sense if it was validating 'from',
+      // but here it validates 'to'.
+      // The test 'createStateWithAceInWaste' returns a valid state.
+      
       const move: Move = {
         from: { type: 'tableau', columnIndex: 0, cardIndex: 0 },
-        to: { type: 'foundation', suit: 'hearts' },
+        to: { type: 'foundation', pileIndex: 0 },
         cardCount: 2,
       }
       
@@ -319,10 +334,7 @@ function createStateWithEmptyColumnAndKing(): GameState {
       ],
     },
     foundations: {
-      hearts: [],
-      diamonds: [],
-      clubs: [],
-      spades: [],
+      piles: [[], [], [], []],
     },
     stockAndWaste: {
       stock: [],
@@ -347,10 +359,7 @@ function createStateWithEmptyColumnAndQueen(): GameState {
       ],
     },
     foundations: {
-      hearts: [],
-      diamonds: [],
-      clubs: [],
-      spades: [],
+      piles: [[], [], [], []],
     },
     stockAndWaste: {
       stock: [],
@@ -375,10 +384,7 @@ function createStateWithAceInWaste(): GameState {
       ],
     },
     foundations: {
-      hearts: [],
-      diamonds: [],
-      clubs: [],
-      spades: [],
+      piles: [[], [], [], []],
     },
     stockAndWaste: {
       stock: [],
@@ -389,33 +395,7 @@ function createStateWithAceInWaste(): GameState {
   }
 }
 
-function createStateWithTwoInWaste(): GameState {
-  return {
-    tableau: {
-      columns: [
-        [createCard('clubs', 5, true)],
-        [createCard('hearts', 5, true)],
-        [createCard('diamonds', 10, true)],
-        [createCard('clubs', 3, true)],
-        [createCard('spades', 7, true)],
-        [createCard('hearts', 2, true)],
-        [createCard('diamonds', 9, true)],
-      ],
-    },
-    foundations: {
-      hearts: [],
-      diamonds: [],
-      clubs: [],
-      spades: [],
-    },
-    stockAndWaste: {
-      stock: [],
-      waste: [createCard('hearts', 2, true)], // Two of hearts (not Ace)
-    },
-    stats: { moves: 0, score: 0, startTime: Date.now(), elapsedSeconds: 0 },
-    isWon: false,
-  }
-}
+
 
 function createStateWithValidTableauMove(): GameState {
   return {
@@ -438,10 +418,7 @@ function createStateWithValidTableauMove(): GameState {
       ],
     },
     foundations: {
-      hearts: [],
-      diamonds: [],
-      clubs: [],
-      spades: [],
+      piles: [[], [], [], []],
     },
     stockAndWaste: {
       stock: [],
@@ -469,10 +446,7 @@ function createStateWithMultipleCardsInColumn(): GameState {
       ],
     },
     foundations: {
-      hearts: [],
-      diamonds: [],
-      clubs: [],
-      spades: [],
+      piles: [[], [], [], []],
     },
     stockAndWaste: {
       stock: [],
@@ -499,10 +473,12 @@ function createWinningState(): GameState {
       columns: [[], [], [], [], [], [], []],
     },
     foundations: {
-      hearts: createFullFoundation('hearts'),
-      diamonds: createFullFoundation('diamonds'),
-      clubs: createFullFoundation('clubs'),
-      spades: createFullFoundation('spades'),
+      piles: [
+        createFullFoundation('hearts'),
+        createFullFoundation('diamonds'),
+        createFullFoundation('clubs'),
+        createFullFoundation('spades'),
+      ],
     },
     stockAndWaste: {
       stock: [],

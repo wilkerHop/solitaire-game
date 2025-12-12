@@ -6,12 +6,7 @@ import type { GameState } from '../types'
 
 export function checkWinCondition(state: GameState): boolean {
   const { foundations } = state
-  return (
-    foundations.hearts.length === 13 &&
-    foundations.diamonds.length === 13 &&
-    foundations.clubs.length === 13 &&
-    foundations.spades.length === 13
-  )
+  return foundations.piles.every(pile => pile.length === 13)
 }
 
 export function canAutoComplete(state: GameState): boolean {

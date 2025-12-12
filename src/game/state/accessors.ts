@@ -2,7 +2,7 @@
  * State accessor functions - Uses Strategy Pattern instead of switch
  */
 
-import type { Card, CardLocation, Foundations, GameState, LocationType, Pile, Suit } from '../types'
+import type { Card, CardLocation, Foundations, GameState, LocationType, Pile } from '../types'
 
 export function getTopCard(pile: Pile): Card | undefined {
   return pile.length > 0 ? pile[pile.length - 1] : undefined
@@ -19,7 +19,7 @@ const cardAtLocationHandlers: Record<LocationType, CardLocationHandler> = {
   },
   foundation: (state, location) => {
     if (location.type !== 'foundation') return undefined
-    const pile = state.foundations[location.suit]
+    const pile = state.foundations.piles[location.pileIndex]
     return getTopCard(pile)
   },
   waste: (state) => getTopCard(state.stockAndWaste.waste),
@@ -31,8 +31,8 @@ export function getCardAtLocation(state: GameState, location: CardLocation): Car
   return handler(state, location)
 }
 
-export function getFoundationPile(foundations: Foundations, suit: Suit): Pile {
-  return foundations[suit]
+export function getFoundationPile(foundations: Foundations, pileIndex: number): Pile {
+  return foundations.piles[pileIndex]
 }
 
 /** Strategy handlers for getCardsForMove - lazy evaluation with arrow functions */
@@ -51,7 +51,7 @@ const cardsForMoveHandlers: Record<LocationType, CardsForMoveHandler> = {
   },
   foundation: (state, from) => {
     if (from.type !== 'foundation') return []
-    const pile = state.foundations[from.suit]
+    const pile = state.foundations.piles[from.pileIndex]
     const topCard = getTopCard(pile)
     return topCard ? [topCard] : []
   },
