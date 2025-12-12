@@ -45,6 +45,18 @@ jobs:
         uses: actions/checkout@v4
 
       # =========================================================================
+      # Sin 0: Switch Statements (Architecture Rule - Use Mapped Object Literals)
+      # =========================================================================
+      - name: "Sin Check: No switch statements (use Mapped Object Literals)"
+        run: |
+          echo "📋 Checking for switch statements..."
+          if grep -rE "^\s*switch\s*\(" src --include="*.ts" --include="*.tsx" 2>/dev/null; then
+            echo "❌ FOUND: switch statements. Use Mapped Object Literals or Strategy Pattern instead."
+            exit 1
+          fi
+          echo "✅ No switch statements found."
+
+      # =========================================================================
       # Sin 1: Ignore Directives
       # =========================================================================
       - name: "Sin Check: No ignore directives"

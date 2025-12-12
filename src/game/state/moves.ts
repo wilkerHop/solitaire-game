@@ -1,9 +1,9 @@
 /**
- * Apply moves to game state
+ * Apply moves to game state - Uses Strategy Pattern instead of switch
  */
 
 import { flipCardUp } from '../card-utils'
-import type { Card, CardLocation, GameState, GameStats, Move, Result } from '../types'
+import type { Card, CardLocation, GameState, GameStats, LocationType, Move, Result } from '../types'
 import { failure, success } from '../types'
 import { getCardsForMove } from './accessors'
 import { validateMove } from './validation'
@@ -28,37 +28,69 @@ export function applyMove(state: GameState, move: Move): Result<GameState> {
   return success(Object.freeze({ ...stateAfterAdd, stats: newStats, isWon }))
 }
 
+/** Strategy handlers for removing cards from source - lazy evaluation with arrow functions */
+type RemoveFromSourceHandler = (state: GameState, move: Move) => GameState
+
+const removeFromSourceHandlers: Record<LocationType, RemoveFromSourceHandler> = {
+  tableau: (state, move) => {
+    if (move.from.type !== 'tableau') return state
+    const columns = [...state.tableau.columns]
+    const column = [...columns[move.from.columnIndex]]
+    column.splice(move.from.cardIndex)
+    if (column.length > 0 && !column[column.length - 1].faceUp) {
+      column[column.length - 1] = flipCardUp(column[column.length - 1])
+    }
+    columns[move.from.columnIndex] = Object.freeze(column)
+    return Object.freeze({
+      ...state,
+      tableau: Object.freeze({ columns: Object.freeze(columns) }),
+    })
+  },
+  waste: (state) => {
+    const waste = state.stockAndWaste.waste.slice(0, -1)
+    return Object.freeze({
+      ...state,
+      stockAndWaste: Object.freeze({ ...state.stockAndWaste, waste: Object.freeze(waste) }),
+    })
+  },
+  foundation: (state, move) => {
+    if (move.from.type !== 'foundation') return state
+    const foundations = { ...state.foundations }
+    const pile = foundations[move.from.suit].slice(0, -1)
+    foundations[move.from.suit] = Object.freeze(pile)
+    return Object.freeze({ ...state, foundations: Object.freeze(foundations) })
+  },
+  stock: (state) => state,
+}
+
 function removeCardsFromSource(state: GameState, move: Move): GameState {
-  switch (move.from.type) {
-    case 'tableau': {
-      const columns = [...state.tableau.columns]
-      const column = [...columns[move.from.columnIndex]]
-      column.splice(move.from.cardIndex)
-      if (column.length > 0 && !column[column.length - 1].faceUp) {
-        column[column.length - 1] = flipCardUp(column[column.length - 1])
-      }
-      columns[move.from.columnIndex] = Object.freeze(column)
-      return Object.freeze({
-        ...state,
-        tableau: Object.freeze({ columns: Object.freeze(columns) }),
-      })
-    }
-    case 'waste': {
-      const waste = state.stockAndWaste.waste.slice(0, -1)
-      return Object.freeze({
-        ...state,
-        stockAndWaste: Object.freeze({ ...state.stockAndWaste, waste: Object.freeze(waste) }),
-      })
-    }
-    case 'foundation': {
-      const foundations = { ...state.foundations }
-      const pile = foundations[move.from.suit].slice(0, -1)
-      foundations[move.from.suit] = Object.freeze(pile)
-      return Object.freeze({ ...state, foundations: Object.freeze(foundations) })
-    }
-    case 'stock':
-      return state
-  }
+  const handler = removeFromSourceHandlers[move.from.type]
+  return handler(state, move)
+}
+
+/** Strategy handlers for adding cards to destination - lazy evaluation with arrow functions */
+type AddToDestinationHandler = (state: GameState, destination: CardLocation, cards: readonly Card[]) => GameState
+
+const addToDestinationHandlers: Record<LocationType, AddToDestinationHandler> = {
+  tableau: (state, destination, cards) => {
+    if (destination.type !== 'tableau') return state
+    const columns = [...state.tableau.columns]
+    const column = [...columns[destination.columnIndex], ...cards]
+    columns[destination.columnIndex] = Object.freeze(column)
+    return Object.freeze({
+      ...state,
+      tableau: Object.freeze({ columns: Object.freeze(columns) }),
+    })
+  },
+  foundation: (state, destination, cards) => {
+    if (destination.type !== 'foundation') return state
+    const foundations = { ...state.foundations }
+    const pile = [...foundations[destination.suit], ...cards]
+    foundations[destination.suit] = Object.freeze(pile)
+    return Object.freeze({ ...state, foundations: Object.freeze(foundations) })
+  },
+  stock: (state) => state,
+  waste: (state) => state,
 }
 
 function addCardsToDestination(
@@ -66,24 +98,6 @@ function addCardsToDestination(
   destination: CardLocation,
   cards: readonly Card[]
 ): GameState {
-  switch (destination.type) {
-    case 'tableau': {
-      const columns = [...state.tableau.columns]
-      const column = [...columns[destination.columnIndex], ...cards]
-      columns[destination.columnIndex] = Object.freeze(column)
-      return Object.freeze({
-        ...state,
-        tableau: Object.freeze({ columns: Object.freeze(columns) }),
-      })
-    }
-    case 'foundation': {
-      const foundations = { ...state.foundations }
-      const pile = [...foundations[destination.suit], ...cards]
-      foundations[destination.suit] = Object.freeze(pile)
-      return Object.freeze({ ...state, foundations: Object.freeze(foundations) })
-    }
-    case 'stock':
-    case 'waste':
-      return state
-  }
+  const handler = addToDestinationHandlers[destination.type]
+  return handler(state, destination, cards)
 }

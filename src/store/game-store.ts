@@ -1,5 +1,6 @@
 /**
  * Game Store - Zustand-based state management for Solitaire
+ * Uses Mapped Object Literals instead of switch for dispatch
  */
 
 import { create } from 'zustand'
@@ -16,6 +17,8 @@ export type GameAction =
   | { type: 'REDO' }
   | { type: 'AUTO_COMPLETE' }
 
+type GameActionType = GameAction['type']
+
 interface GameStore {
   history: HistoryState
   isGameStarted: boolean
@@ -31,6 +34,18 @@ interface GameStore {
   autoComplete: () => void
 }
 
+/** Action dispatcher map - ensures exhaustive handling of all action types */
+type ActionHandler = (store: GameStore, action: GameAction) => void
+
+const actionHandlers: Record<GameActionType, ActionHandler> = {
+  NEW_GAME: (store, action) => { if (action.type === 'NEW_GAME') store.newGame(action.seed) },
+  MOVE_CARD: (store, action) => { if (action.type === 'MOVE_CARD') store.moveCard(action.move) },
+  DRAW_CARD: (store, action) => { if (action.type === 'DRAW_CARD') store.drawCard(action.count) },
+  UNDO: (store) => { store.undo() },
+  REDO: (store) => { store.redo() },
+  AUTO_COMPLETE: (store) => { store.autoComplete() },
+}
+
 export const useGameStore = create<GameStore>()((set, get) => ({
   history: createInitialHistory(),
   isGameStarted: true,
@@ -40,14 +55,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   
   dispatch: (action: GameAction): void => {
     const store = get()
-    switch (action.type) {
-      case 'NEW_GAME': store.newGame(action.seed); break
-      case 'MOVE_CARD': store.moveCard(action.move); break
-      case 'DRAW_CARD': store.drawCard(action.count); break
-      case 'UNDO': store.undo(); break
-      case 'REDO': store.redo(); break
-      case 'AUTO_COMPLETE': store.autoComplete(); break
-    }
+    const handler = actionHandlers[action.type]
+    handler(store, action)
   },
   
   newGame: (seed?: number): void => {
@@ -79,4 +88,3 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (finalState !== currentState) set({ history: pushToHistory(history, finalState) })
   },
 }))
-
