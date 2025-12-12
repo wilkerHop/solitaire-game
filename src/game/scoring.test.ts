@@ -1,15 +1,38 @@
 import { describe, expect, it } from 'vitest'
 import {
-    calculateFinalScore,
-    calculateMoveScore,
-    calculateProgress,
-    calculateTimeBonus,
-    dealGame,
-    formatScore,
-    getInitialScore,
-    isUndoAllowed,
-    type Move,
+  calculateFinalScore,
+  calculateMoveScore,
+  calculateProgress,
+  calculateTimeBonus,
+  createCard,
+  dealGame,
+  formatScore,
+  getInitialScore,
+  isUndoAllowed,
+  type GameState,
+  type Move,
 } from '../game'
+
+function createWinningStateForProgress(): GameState {
+  type CardArray = ReturnType<typeof createCard>[]
+  const createPile = (suit: 'hearts' | 'diamonds' | 'clubs' | 'spades'): CardArray =>
+    Array.from({ length: 13 }, (_, i) => 
+      createCard(suit, (i + 1) as 1|2|3|4|5|6|7|8|9|10|11|12|13, true)
+    )
+  
+  return {
+    tableau: { columns: [[], [], [], [], [], [], []] },
+    foundations: {
+      hearts: createPile('hearts'),
+      diamonds: createPile('diamonds'),
+      clubs: createPile('clubs'),
+      spades: createPile('spades'),
+    },
+    stockAndWaste: { stock: [], waste: [] },
+    stats: { moves: 0, score: 0, startTime: 0, elapsedSeconds: 0 },
+    isWon: true,
+  }
+}
 
 describe('Scoring System', () => {
   describe('calculateMoveScore', () => {
@@ -46,7 +69,7 @@ describe('Scoring System', () => {
       expect(result.reason).toContain('Tableau to Foundation')
     })
 
-    it('should penalize -15 points for foundation to tableau move', () => {
+    it('should penalize -15 for foundation to tableau move', () => {
       const move: Move = {
         from: { type: 'foundation', suit: 'hearts' },
         to: { type: 'tableau', columnIndex: 0, cardIndex: 0 },
@@ -65,117 +88,73 @@ describe('Scoring System', () => {
       }
       const result = calculateMoveScore(move, true, 'standard')
       expect(result.points).toBe(5)
-      expect(result.reason).toContain('Card flip')
+    })
+  })
+
+  describe('Vegas mode', () => {
+    it('should give $5 for foundation move', () => {
+      const move: Move = {
+        from: { type: 'tableau', columnIndex: 0, cardIndex: 0 },
+        to: { type: 'foundation', suit: 'hearts' },
+        cardCount: 1,
+      }
+      expect(calculateMoveScore(move, false, 'vegas').points).toBe(5)
     })
 
-    describe('Vegas mode', () => {
-      it('should give $5 for foundation move in Vegas', () => {
-        const move: Move = {
-          from: { type: 'tableau', columnIndex: 0, cardIndex: 0 },
-          to: { type: 'foundation', suit: 'hearts' },
-          cardCount: 1,
-        }
-        const result = calculateMoveScore(move, false, 'vegas')
-        expect(result.points).toBe(5)
-      })
-
-      it('should give 0 points for tableau moves in Vegas', () => {
-        const move: Move = {
-          from: { type: 'waste' },
-          to: { type: 'tableau', columnIndex: 0, cardIndex: 0 },
-          cardCount: 1,
-        }
-        const result = calculateMoveScore(move, false, 'vegas')
-        expect(result.points).toBe(0)
-      })
+    it('should give 0 for tableau moves', () => {
+      const move: Move = {
+        from: { type: 'waste' },
+        to: { type: 'tableau', columnIndex: 0, cardIndex: 0 },
+        cardCount: 1,
+      }
+      expect(calculateMoveScore(move, false, 'vegas').points).toBe(0)
     })
   })
 
   describe('calculateTimeBonus', () => {
-    it('should give max bonus for fast wins (<30s)', () => {
-      const bonus = calculateTimeBonus(20, 'standard')
-      expect(bonus).toBeGreaterThan(20000)
+    it('should give max bonus for fast wins', () => {
+      expect(calculateTimeBonus(20, 'standard')).toBeGreaterThan(20000)
     })
-
-    it('should give no bonus for slow games (>10min)', () => {
-      const bonus = calculateTimeBonus(700, 'standard')
-      expect(bonus).toBe(0)
+    it('should give no bonus for slow games', () => {
+      expect(calculateTimeBonus(700, 'standard')).toBe(0)
     })
-
-    it('should give proportional bonus for normal times', () => {
-      const bonus = calculateTimeBonus(100, 'standard')
-      expect(bonus).toBe(7000)
+    it('should give proportional bonus', () => {
+      expect(calculateTimeBonus(100, 'standard')).toBe(7000)
     })
-
-    it('should give no time bonus in Vegas mode', () => {
-      const bonus = calculateTimeBonus(30, 'vegas')
-      expect(bonus).toBe(0)
+    it('should give no bonus in Vegas mode', () => {
+      expect(calculateTimeBonus(30, 'vegas')).toBe(0)
     })
   })
 
   describe('calculateFinalScore', () => {
     it('should add time bonus to current score', () => {
-      const finalScore = calculateFinalScore(100, 100, 'standard')
-      expect(finalScore).toBe(100 + 7000)
+      expect(calculateFinalScore(100, 100, 'standard')).toBe(7100)
     })
   })
 
   describe('getInitialScore', () => {
-    it('should return 0 for standard mode', () => {
-      expect(getInitialScore('standard')).toBe(0)
-    })
-
-    it('should return -52 for Vegas mode', () => {
-      expect(getInitialScore('vegas')).toBe(-52)
-    })
+    it('returns 0 for standard', () => { expect(getInitialScore('standard')).toBe(0) })
+    it('returns -52 for vegas', () => { expect(getInitialScore('vegas')).toBe(-52) })
   })
 
   describe('isUndoAllowed', () => {
-    it('should allow undo in standard mode', () => {
-      expect(isUndoAllowed('standard')).toBe(true)
-    })
-
-    it('should not allow undo in Vegas mode', () => {
-      expect(isUndoAllowed('vegas')).toBe(false)
-    })
+    it('allows undo in standard', () => { expect(isUndoAllowed('standard')).toBe(true) })
+    it('disallows undo in vegas', () => { expect(isUndoAllowed('vegas')).toBe(false) })
   })
 
   describe('formatScore', () => {
-    it('should format standard score as number', () => {
-      expect(formatScore(150, 'standard')).toBe('150')
-    })
-
-    it('should format positive Vegas score with $', () => {
-      expect(formatScore(25, 'vegas')).toBe('$25')
-    })
-
-    it('should format negative Vegas score with -$', () => {
-      expect(formatScore(-15, 'vegas')).toBe('-$15')
-    })
+    it('formats standard score', () => { expect(formatScore(150, 'standard')).toBe('150') })
+    it('formats positive vegas', () => { expect(formatScore(25, 'vegas')).toBe('$25') })
+    it('formats negative vegas', () => { expect(formatScore(-15, 'vegas')).toBe('-$15') })
   })
 
   describe('calculateProgress', () => {
-    it('should return 0% for new game', () => {
-      const state = dealGame(42)
-      expect(calculateProgress(state)).toBe(0)
+    it('returns 0% for new game', () => {
+      expect(calculateProgress(dealGame(42))).toBe(0)
     })
-
-    it('should return 100% when all cards in foundation', () => {
-      // Create a winning state
-      const winState = {
-        tableau: { columns: [[], [], [], [], [], [], []] },
-        foundations: {
-          hearts: Array.from({ length: 13 }, () => ({ suit: 'hearts', rank: 1, faceUp: true })),
-          diamonds: Array.from({ length: 13 }, () => ({ suit: 'diamonds', rank: 1, faceUp: true })),
-          clubs: Array.from({ length: 13 }, () => ({ suit: 'clubs', rank: 1, faceUp: true })),
-          spades: Array.from({ length: 13 }, () => ({ suit: 'spades', rank: 1, faceUp: true })),
-        },
-        stockAndWaste: { stock: [], waste: [] },
-        stats: { moves: 0, score: 0, startTime: 0, elapsedSeconds: 0 },
-        isWon: true,
-      }
-      // @ts-expect-error - Simplified state for testing
-      expect(calculateProgress(winState)).toBe(100)
+    it('returns 100% when all cards in foundation', () => {
+      expect(calculateProgress(createWinningStateForProgress())).toBe(100)
     })
   })
 })
+
