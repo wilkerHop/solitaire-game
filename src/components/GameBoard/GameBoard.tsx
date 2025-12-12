@@ -14,6 +14,7 @@ import { Controls } from './Controls'
 import './GameBoard.css'
 import { TableauArea } from './TableauArea'
 import { TopRow } from './TopRow'
+import { useDragDrop } from './useDragDrop'
 
 export function GameBoard(): ReactElement {
   const gameState = useGameState()
@@ -68,40 +69,7 @@ export function GameBoard(): ReactElement {
     handleCardClick({ type: 'tableau', columnIndex, cardIndex: 0 })
   }, [handleCardClick])
 
-  const handleDragStart = useCallback((e: React.DragEvent, location: CardLocation): void => {
-    e.dataTransfer.setData('application/json', JSON.stringify(location))
-    e.dataTransfer.effectAllowed = 'move'
-  }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent): void => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-  }, [])
-
-  const handleDrop = useCallback((e: React.DragEvent, targetLocation: CardLocation): void => {
-    e.preventDefault()
-    try {
-      const sourceData = e.dataTransfer.getData('application/json')
-      if (!sourceData) return
-      
-      const sourceLocation = JSON.parse(sourceData) as CardLocation
-      
-      const cardCount = sourceLocation.type === 'tableau'
-        ? tableau.columns[sourceLocation.columnIndex].length - sourceLocation.cardIndex
-        : 1
-      
-      const move: Move = {
-        from: sourceLocation,
-        to: targetLocation,
-        cardCount,
-      }
-      moveCard(move)
-      setSelectedLocation(null)
-    } catch (err) {
-      // Ignore invalid drag data
-      void err
-    }
-  }, [moveCard, tableau.columns])
+  const { handleDragStart, handleDragOver, handleDrop } = useDragDrop(moveCard, tableau.columns, setSelectedLocation)
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent): void => {
     if (e.key === 'Escape') setSelectedLocation(null)
