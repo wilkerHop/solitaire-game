@@ -37,27 +37,133 @@ jobs:
         run: npm run build
 
   sins-check:
-    name: Sins Check (Health Check)
+    name: Sins Check (Code Quality)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Download health-check.sh from wilkerHop/shadow-protostar
+      # =========================================================================
+      # Sin 1: Ignore Directives
+      # =========================================================================
+      - name: "Sin Check: No ignore directives"
         run: |
-          mkdir -p scripts
-          curl -fsSL https://raw.githubusercontent.com/wilkerHop/shadow-protostar/refs/heads/main/scripts/health-check.sh -o scripts/health-check.sh
-          chmod +x scripts/health-check.sh
+          echo "📋 Checking for ignore directives..."
+          if grep -rE "eslint-disable|@ts-ignore|@ts-nocheck|@ts-expect-error|biome-ignore" src 2>/dev/null; then
+            echo "❌ FOUND: Ignore directives. Please remove them."
+            exit 1
+          fi
+          echo "✅ No ignore directives found."
 
-      - name: Run Sins Check
-        run: ./scripts/health-check.sh
+      # =========================================================================
+      # Sin 2: Empty Catch Blocks
+      # =========================================================================
+      - name: "Sin Check: No empty catch blocks"
+        run: |
+          echo "📋 Checking for empty catch blocks..."
+          if grep -rE "catch\s*\([^)]*\)\s*\{\s*\}" src 2>/dev/null; then
+            echo "❌ FOUND: Empty catch blocks. Catches must handle errors."
+            exit 1
+          fi
+          echo "✅ No empty catch blocks found."
+
+      # =========================================================================
+      # Sin 3: Any Type Usage
+      # =========================================================================
+      - name: "Sin Check: No 'any' type usage"
+        run: |
+          echo "📋 Checking for 'any' type usage..."
+          if grep -rE ":\s*any\b|<any>|as\s+any" src --include="*.ts" --include="*.tsx" 2>/dev/null; then
+            echo "❌ FOUND: 'any' type usage. Use proper types instead."
+            exit 1
+          fi
+          echo "✅ No 'any' type usage found."
+
+      # =========================================================================
+      # Sin 4: Mutable Declarations (let/var)
+      # =========================================================================
+      - name: "Sin Check: No let/var declarations"
+        run: |
+          echo "📋 Checking for 'let' and 'var' declarations..."
+          if grep -rE "^\s*(let|var)\s+" src --include="*.ts" --include="*.tsx" 2>/dev/null; then
+            echo "❌ FOUND: Mutable declarations. Use const instead."
+            exit 1
+          fi
+          echo "✅ No mutable declarations found."
+
+      # =========================================================================
+      # Sin 5: Console Statements
+      # =========================================================================
+      - name: "Sin Check: No console statements"
+        run: |
+          echo "📋 Checking for console statements..."
+          if grep -rE "console\.(log|warn|error|info|debug)" src --include="*.ts" --include="*.tsx" 2>/dev/null; then
+            echo "❌ FOUND: Console statements. Use proper logging instead."
+            exit 1
+          fi
+          echo "✅ No console statements found."
+
+      # =========================================================================
+      # Sin 6: Large Files (>100 lines)
+      # =========================================================================
+      - name: "Sin Check: No large files (>100 lines)"
+        run: |
+          echo "📋 Checking for large files (>100 lines)..."
+          LIMIT=100
+          LARGE_FILES=$(find src -name "*.ts" -o -name "*.tsx" 2>/dev/null | xargs wc -l 2>/dev/null | awk -v limit=$LIMIT '$1 > limit && $2 != "total" {print $2 ": " $1 " lines"}')
+          
+          if [ -n "$LARGE_FILES" ]; then
+            echo ""
+            echo "⚠️  WARNING: The following files exceed $LIMIT lines:"
+            echo "$LARGE_FILES"
+            echo ""
+            echo "❌ STRICT MODE: Exiting due to large files."
+            exit 1
+          fi
+          echo "✅ No large files found."
+
+      # =========================================================================
+      # Sin 7: Untested Files
+      # =========================================================================
+      - name: "Sin Check: All game files have tests"
+        run: |
+          echo "📋 Checking for files without test suites..."
+          
+          UNTESTED_FILES=""
+          GAME_DIR="src/game"
+          
+          if [ -d "$GAME_DIR" ]; then
+            for file in $(find "$GAME_DIR" -name "*.ts" ! -name "*.test.ts" ! -name "index.ts" ! -name "types.ts" 2>/dev/null); do
+              if grep -qE "^export (const|function)" "$file" 2>/dev/null; then
+                dir=$(dirname "$file")
+                basename=$(basename "$file" .ts)
+                
+                # Check for test file in same directory
+                test_file="$dir/$basename.test.ts"
+                
+                if [ ! -f "$test_file" ]; then
+                  UNTESTED_FILES="$UNTESTED_FILES$file\n"
+                fi
+              fi
+            done
+          fi
+          
+          if [ -n "$UNTESTED_FILES" ]; then
+            echo ""
+            echo "⚠️  WARNING: The following files have functions but no test suite:"
+            echo -e "$UNTESTED_FILES"
+            echo "Expected: <file>.test.ts in same directory"
+            echo ""
+            echo "❌ STRICT MODE: Exiting due to untested files."
+            exit 1
+          fi
+          echo "✅ All function files have test suites."
+
+      # =========================================================================
+      # All Checks Passed
+      # =========================================================================
+      - name: "✅ All Sins Checks Passed"
+        run: |
+          echo ""
+          echo "🎉 No sins found! Code is pure."
