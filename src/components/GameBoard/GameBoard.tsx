@@ -7,8 +7,8 @@ import { useCallback, useState } from 'react'
 import type { CardLocation, Move } from '../../game'
 import { findBestMove } from '../../game'
 import {
-    useCanRedo, useCanUndo, useFoundations, useGameState,
-    useGameStore, useIsWon, useStats, useStockAndWaste, useTableau
+  useCanRedo, useCanUndo, useFoundations, useGameState,
+  useGameStore, useIsWon, useStats, useStockAndWaste, useTableau
 } from '../../store'
 import { Controls } from './Controls'
 import './GameBoard.css'
@@ -98,7 +98,8 @@ export function GameBoard(): ReactElement {
       moveCard(move)
       setSelectedLocation(null)
     } catch (err) {
-      console.error('Failed to parse dropped data', err)
+      // Ignore invalid drag data
+      void err
     }
   }, [moveCard, tableau.columns])
 
