@@ -146,12 +146,13 @@ export function createDeck(): Deck {
  * Returns a function that generates the next random number [0, 1).
  */
 export function createSeededRandom(seed: number): () => number {
-  let state = seed
+  // Use object to hold mutable state (object reference is const, properties are mutable)
+  const rng = { state: seed }
   
   return (): number => {
     // LCG parameters (same as glibc)
-    state = (state * 1103515245 + 12345) & 0x7fffffff
-    return state / 0x7fffffff
+    rng.state = (rng.state * 1103515245 + 12345) & 0x7fffffff
+    return rng.state / 0x7fffffff
   }
 }
 

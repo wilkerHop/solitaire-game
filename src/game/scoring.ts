@@ -43,42 +43,31 @@ export function calculateMoveScore(
     return { points: 0, reason: '' }
   }
   
-  // Standard scoring mode
-  let points = 0
-  let reason = ''
-  
-  // From Waste to Tableau
-  if (move.from.type === 'waste' && move.to.type === 'tableau') {
-    points = 5
-    reason = 'Waste to Tableau'
-  }
-  // From Waste to Foundation
-  else if (move.from.type === 'waste' && move.to.type === 'foundation') {
-    points = 10
-    reason = 'Waste to Foundation'
-  }
-  // From Tableau to Foundation
-  else if (move.from.type === 'tableau' && move.to.type === 'foundation') {
-    points = 10
-    reason = 'Tableau to Foundation'
-  }
-  // From Foundation to Tableau (penalty)
-  else if (move.from.type === 'foundation' && move.to.type === 'tableau') {
-    points = -15
-    reason = 'Foundation to Tableau (penalty)'
-  }
-  
-  // Bonus for flipping a card
-  if (wasCardFlipped && move.from.type === 'tableau') {
-    points += 5
-    if (reason) {
-      reason += ' + Card flip'
-    } else {
-      reason = 'Card flip'
+  // Standard scoring mode - compute base score
+  const baseScore = ((): { points: number; reason: string } => {
+    if (move.from.type === 'waste' && move.to.type === 'tableau') {
+      return { points: 5, reason: 'Waste to Tableau' }
     }
-  }
+    if (move.from.type === 'waste' && move.to.type === 'foundation') {
+      return { points: 10, reason: 'Waste to Foundation' }
+    }
+    if (move.from.type === 'tableau' && move.to.type === 'foundation') {
+      return { points: 10, reason: 'Tableau to Foundation' }
+    }
+    if (move.from.type === 'foundation' && move.to.type === 'tableau') {
+      return { points: -15, reason: 'Foundation to Tableau (penalty)' }
+    }
+    return { points: 0, reason: '' }
+  })()
   
-  return { points, reason }
+  // Add flip bonus if applicable
+  const flipBonus = wasCardFlipped && move.from.type === 'tableau' ? 5 : 0
+  const flipReason = flipBonus > 0 ? (baseScore.reason ? ' + Card flip' : 'Card flip') : ''
+  
+  return { 
+    points: baseScore.points + flipBonus, 
+    reason: baseScore.reason + flipReason 
+  }
 }
 
 /**

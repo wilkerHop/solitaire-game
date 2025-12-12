@@ -241,10 +241,10 @@ describe('Deck Operations', () => {
       const shuffled2 = shuffleDeck(deck, 42)
       
       expect(shuffled1.length).toBe(shuffled2.length)
-      for (let i = 0; i < shuffled1.length; i++) {
-        expect(shuffled1[i].suit).toBe(shuffled2[i].suit)
-        expect(shuffled1[i].rank).toBe(shuffled2[i].rank)
-      }
+      const allMatch = shuffled1.every((card, i) =>
+        card.suit === shuffled2[i].suit && card.rank === shuffled2[i].rank
+      )
+      expect(allMatch).toBe(true)
     })
 
     it('should produce different results with different seeds', () => {
@@ -253,13 +253,9 @@ describe('Deck Operations', () => {
       const shuffled2 = shuffleDeck(deck, 43)
       
       // At least some cards should be in different positions
-      let differences = 0
-      for (let i = 0; i < shuffled1.length; i++) {
-        if (shuffled1[i].suit !== shuffled2[i].suit || 
-            shuffled1[i].rank !== shuffled2[i].rank) {
-          differences++
-        }
-      }
+      const differences = shuffled1.filter((card, i) =>
+        card.suit !== shuffled2[i].suit || card.rank !== shuffled2[i].rank
+      ).length
       expect(differences).toBeGreaterThan(0)
     })
 
@@ -275,19 +271,20 @@ describe('Deck Operations', () => {
       const random1 = createSeededRandom(12345)
       const random2 = createSeededRandom(12345)
       
-      for (let i = 0; i < 10; i++) {
-        expect(random1()).toBe(random2())
-      }
+      const allMatch = Array.from({ length: 10 }).every(() =>
+        random1() === random2()
+      )
+      expect(allMatch).toBe(true)
     })
 
     it('should produce values in [0, 1) range', () => {
       const random = createSeededRandom(99999)
       
-      for (let i = 0; i < 100; i++) {
+      const allInRange = Array.from({ length: 100 }).every(() => {
         const value = random()
-        expect(value).toBeGreaterThanOrEqual(0)
-        expect(value).toBeLessThan(1)
-      }
+        return value >= 0 && value < 1
+      })
+      expect(allInRange).toBe(true)
     })
   })
 })

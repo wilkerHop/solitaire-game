@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
-    applyMove,
-    canAutoComplete,
-    checkWinCondition,
-    createCard,
-    dealGame,
-    drawFromStock,
-    getTopCard,
-    validateMove,
-    type GameState,
-    type Move,
+  applyMove,
+  canAutoComplete,
+  checkWinCondition,
+  createCard,
+  dealGame,
+  drawFromStock,
+  getTopCard,
+  validateMove,
+  type GameState,
+  type Move,
 } from '../game'
 
 describe('Game State', () => {
@@ -139,12 +139,11 @@ describe('Game State', () => {
     })
 
     it('should recycle waste to stock when stock is empty', () => {
-      let state = dealGame(42)
+      // Helper to draw N cards using recursion
+      const drawNCards = (s: ReturnType<typeof dealGame>, n: number): ReturnType<typeof dealGame> =>
+        n <= 0 ? s : drawNCards(drawFromStock(s, 1), n - 1)
       
-      // Draw all 24 cards from stock
-      for (let i = 0; i < 24; i++) {
-        state = drawFromStock(state, 1)
-      }
+      const state = drawNCards(dealGame(42), 24)
       
       expect(state.stockAndWaste.stock.length).toBe(0)
       expect(state.stockAndWaste.waste.length).toBe(24)
@@ -291,11 +290,11 @@ describe('Game State', () => {
     })
 
     it('should return false when tableau has face-down cards', () => {
-      let state = dealGame(42)
-      // Empty the stock
-      for (let i = 0; i < 24; i++) {
-        state = drawFromStock(state, 1)
-      }
+      // Helper to draw N cards using recursion
+      const drawNCards = (s: ReturnType<typeof dealGame>, n: number): ReturnType<typeof dealGame> =>
+        n <= 0 ? s : drawNCards(drawFromStock(s, 1), n - 1)
+      
+      const state = drawNCards(dealGame(42), 24)
       // Tableau still has face-down cards
       expect(canAutoComplete(state)).toBe(false)
     })

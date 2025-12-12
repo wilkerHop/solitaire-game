@@ -66,29 +66,32 @@ export function dealGame(seed?: number): GameState {
   const deck = createDeck()
   const shuffled = shuffleDeck(deck, seed)
   
-  // Deal to tableau
+  // Deal to tableau using reduce to track deck index
   // Column 0: 1 card, Column 1: 2 cards, ..., Column 6: 7 cards
   // Top card of each column is face up
-  const tableauColumns: Card[][] = Array.from({ length: 7 }, () => [])
-  let deckIndex = 0
-  
-  for (let col = 0; col < 7; col++) {
-    for (let row = 0; row <= col; row++) {
-      const card = shuffled[deckIndex]
-      // Last card in column is face up
-      const isFaceUp = row === col
-      tableauColumns[col].push(
-        isFaceUp ? flipCardUp(card) : card
-      )
-      deckIndex++
-    }
-  }
+  const dealResult = Array.from({ length: 7 }).reduce<{
+    columns: Card[][]
+    deckIdx: number
+  }>(
+    (acc, _, col) => {
+      const cards = Array.from({ length: col + 1 }).map((__, row) => {
+        const card = shuffled[acc.deckIdx + row]
+        const isFaceUp = row === col
+        return isFaceUp ? flipCardUp(card) : card
+      })
+      return {
+        columns: [...acc.columns, cards],
+        deckIdx: acc.deckIdx + col + 1,
+      }
+    },
+    { columns: [], deckIdx: 0 }
+  )
   
   // Remaining cards go to stock (face down)
-  const stockCards = shuffled.slice(deckIndex)
+  const stockCards = shuffled.slice(dealResult.deckIdx)
   
   const tableau: Tableau = Object.freeze({
-    columns: Object.freeze(tableauColumns.map(col => Object.freeze(col))),
+    columns: Object.freeze(dealResult.columns.map(col => Object.freeze(col))),
   })
   
   const stockAndWaste: StockAndWaste = Object.freeze({

@@ -232,17 +232,18 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       return
     }
     
-    // Auto-complete logic: repeatedly move cards to foundations
-    let gameState = currentState
-    let madeProgress = true
-    
-    while (madeProgress && !checkWinCondition(gameState)) {
-      madeProgress = false
+    // Recursive auto-complete: try to move cards to foundations until no progress
+    const tryAutoMove = (state: GameState): GameState => {
+      if (checkWinCondition(state)) {
+        return state
+      }
       
-      // Try to move from each tableau column
-      for (let colIndex = 0; colIndex < 7; colIndex++) {
-        const column = gameState.tableau.columns[colIndex]
-        if (column.length === 0) continue
+      // Find first valid move to foundation
+      const findMove = (colIndex: number): GameState | null => {
+        if (colIndex >= 7) return null
+        
+        const column = state.tableau.columns[colIndex]
+        if (column.length === 0) return findMove(colIndex + 1)
         
         const topCard = column[column.length - 1]
         const move: Move = {
@@ -251,18 +252,19 @@ export const useGameStore = create<GameStore>()((set, get) => ({
           cardCount: 1,
         }
         
-        const result = applyMove(gameState, move)
-        if (result.success) {
-          gameState = result.value
-          madeProgress = true
-          break // Start over after each successful move
-        }
+        const result = applyMove(state, move)
+        return result.success ? result.value : findMove(colIndex + 1)
       }
+      
+      const newState = findMove(0)
+      return newState ? tryAutoMove(newState) : state
     }
     
+    const finalState = tryAutoMove(currentState)
+    
     // Push final state to history
-    if (gameState !== currentState) {
-      set({ history: pushToHistory(history, gameState) })
+    if (finalState !== currentState) {
+      set({ history: pushToHistory(history, finalState) })
     }
   },
 }))
