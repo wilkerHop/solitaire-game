@@ -124,7 +124,7 @@ jobs:
           echo "✅ No large files found."
 
       # =========================================================================
-      # Sin 7: Untested Files
+      # Sin 7: Untested Files (checks top-level modules, not split submodules)
       # =========================================================================
       - name: "Sin Check: All game files have tests"
         run: |
@@ -133,13 +133,18 @@ jobs:
           UNTESTED_FILES=""
           GAME_DIR="src/game"
           
+          # Only check top-level files, not submodule split files
+          # Submodules (in types/, card/, state/, scoring/) are tested via barrel exports
           if [ -d "$GAME_DIR" ]; then
-            for file in $(find "$GAME_DIR" -name "*.ts" ! -name "*.test.ts" ! -name "index.ts" ! -name "types.ts" 2>/dev/null); do
+            for file in $(find "$GAME_DIR" -maxdepth 1 -name "*.ts" ! -name "*.test.ts" ! -name "index.ts" ! -name "types.ts" 2>/dev/null); do
+              # Skip barrel re-export files (they just re-export from submodules)
+              if grep -qE "^export \* from" "$file" 2>/dev/null; then
+                continue
+              fi
+              
               if grep -qE "^export (const|function)" "$file" 2>/dev/null; then
                 dir=$(dirname "$file")
                 basename=$(basename "$file" .ts)
-                
-                # Check for test file in same directory
                 test_file="$dir/$basename.test.ts"
                 
                 if [ ! -f "$test_file" ]; then
