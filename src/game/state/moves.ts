@@ -28,7 +28,6 @@ export function applyMove(state: GameState, move: Move): Result<GameState> {
   return success(Object.freeze({ ...stateAfterAdd, stats: newStats, isWon }))
 }
 
-/** Strategy handlers for removing cards from source - lazy evaluation with arrow functions */
 type RemoveFromSourceHandler = (state: GameState, move: Move) => GameState
 
 const removeFromSourceHandlers: Record<LocationType, RemoveFromSourceHandler> = {
@@ -68,8 +67,7 @@ function removeCardsFromSource(state: GameState, move: Move): GameState {
   return handler(state, move)
 }
 
-/** Strategy handlers for adding cards to destination - lazy evaluation with arrow functions */
-type AddToDestinationHandler = (state: GameState, destination: CardLocation, cards: readonly Card[]) => GameState
+type AddToDestinationHandler = (s: GameState, d: CardLocation, c: readonly Card[]) => GameState
 
 const addToDestinationHandlers: Record<LocationType, AddToDestinationHandler> = {
   tableau: (state, destination, cards) => {
@@ -93,11 +91,6 @@ const addToDestinationHandlers: Record<LocationType, AddToDestinationHandler> = 
   waste: (state) => state,
 }
 
-function addCardsToDestination(
-  state: GameState,
-  destination: CardLocation,
-  cards: readonly Card[]
-): GameState {
-  const handler = addToDestinationHandlers[destination.type]
-  return handler(state, destination, cards)
+function addCardsToDestination(state: GameState, destination: CardLocation, cards: readonly Card[]): GameState {
+  return addToDestinationHandlers[destination.type](state, destination, cards)
 }
